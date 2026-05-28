@@ -4,62 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TMDB ID Finder</title>
-    <!-- Tailwind CSS pour le style -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- Alpine.js pour la logique frontend rapide -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
 
     <div class="max-w-4xl mx-auto px-4 py-12" x-data="tmdbFinder()" x-init="initGenres()">
-        <!-- Header -->
-        <header class="text-center mb-10">
-            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
+        <header class="text-center mb-10 relative">
+            <div class="absolute top-0 right-0 bg-slate-800 border border-slate-700 rounded-lg p-1 flex gap-1 text-xs">
+                <button @click="setLanguage('fr-FR')" 
+                        :class="lang === 'fr-FR' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-slate-200'"
+                        class="px-2 py-1 rounded font-medium transition cursor-pointer">
+                    FR
+                </button>
+                <button @click="setLanguage('en-US')" 
+                        :class="lang === 'en-US' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-slate-200'"
+                        class="px-2 py-1 rounded font-medium transition cursor-pointer">
+                    EN
+                </button>
+            </div>
+
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2 mt-6 sm:mt-0">
                 TMDB ID Finder
             </h1>
-            <p class="text-slate-400">Trouvez instantanément l'ID d'un film, d'une série, d'un artiste ou d'un genre.</p>
+            <p class="text-slate-400" x-text="t('subtitle')"></p>
         </header>
 
-        <!-- Configuration de la clé API -->
         <div class="bg-slate-800 p-4 rounded-xl mb-8 border border-slate-700 shadow-md">
-            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-                Clé API TMDB (v3 auth) ou Token d'accès (Bearer)
-            </label>
+            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2" x-text="t('apiKeyLabel')"></label>
             <div class="flex gap-2">
                 <input type="password" 
                        x-model="apiKey" 
-                       placeholder="Collez votre clé API ou Token ici..." 
+                       :placeholder="t('apiKeyPlaceholder')" 
                        class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
-                <button @click="saveKey()" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg text-sm font-medium transition">
-                    Sauvegarder
+                <button @click="saveKey()" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer whitespace-nowrap" x-text="t('saveBtn')">
                 </button>
             </div>
-            <p class="text-xs text-slate-500 mt-2">Sauvegardé localement dans votre navigateur (LocalStorage).</p>
+            <p class="text-xs text-slate-500 mt-2" x-text="t('localStorageNote')"></p>
         </div>
 
-        <!-- Système d'onglets (Tabs) -->
         <div class="flex border-b border-slate-700 mb-6 gap-2">
             <button @click="tab = 'search'; error = null" 
                     :class="tab === 'search' ? 'border-cyan-500 text-cyan-400' : 'border-transparent text-slate-400 hover:text-slate-200'"
-                    class="py-2 px-4 border-b-2 font-medium text-sm transition">
-                Films, Séries & Artistes
+                    class="py-2 px-4 border-b-2 font-medium text-sm transition cursor-pointer"
+                    x-text="t('tabSearch')">
             </button>
             <button @click="tab = 'genres'; initGenres(); error = null" 
                     :class="tab === 'genres' ? 'border-cyan-500 text-cyan-400' : 'border-transparent text-slate-400 hover:text-slate-200'"
-                    class="py-2 px-4 border-b-2 font-medium text-sm transition">
-                Liste des Genres
+                    class="py-2 px-4 border-b-2 font-medium text-sm transition cursor-pointer"
+                    x-text="t('tabGenres')">
             </button>
         </div>
 
-        <!-- Onglet 1 : RECHERCHE FILMS / SERIES / ACTEURS -->
         <div x-show="tab === 'search'">
-            <!-- Barre de recherche -->
             <div class="mb-8">
                 <div class="relative">
                     <input type="text" 
                            x-model="query" 
                            @input.debounce.300ms="search()"
-                           placeholder="Ex: Inception, Breaking Bad, Leonardo DiCaprio..." 
+                           :placeholder="t('searchPlaceholder')" 
                            class="w-full bg-slate-800 border-2 border-slate-700 focus:border-cyan-500 rounded-xl px-5 py-4 text-lg focus:outline-none shadow-lg transition">
                     <div x-show="loading" class="absolute right-4 top-4">
                         <svg class="animate-spin h-6 w-6 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -70,7 +73,6 @@
                 </div>
             </div>
 
-            <!-- Résultats Médias -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <template x-for="item in results" :key="item.id + '-' + item.media_type">
                     <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-4 flex gap-4 hover:border-slate-600 transition shadow-sm">
@@ -82,6 +84,7 @@
                                 <span class="text-xs text-slate-600">N/A</span>
                             </template>
                         </div>
+                        
                         <div class="flex flex-col justify-between flex-grow min-w-0">
                             <div>
                                 <div class="flex items-center gap-2 mb-1">
@@ -91,16 +94,17 @@
                                             'bg-purple-500/20 text-purple-400': item.media_type === 'tv',
                                             'bg-amber-500/20 text-amber-400': item.media_type === 'person'
                                           }"
-                                          x-text="item.media_type === 'movie' ? 'Film' : item.media_type === 'tv' ? 'Série' : 'Artiste'">
+                                          x-text="item.media_type === 'movie' ? t('badgeMovie') : item.media_type === 'tv' ? t('badgeTv') : t('badgePerson')">
                                     </span>
                                     <span class="text-xs text-slate-400 truncate" x-text="item.release_date || item.first_air_date || item.known_for_department"></span>
                                 </div>
                                 <h3 class="font-bold text-slate-100 truncate text-base" :title="item.title || item.name" x-text="item.title || item.name"></h3>
                             </div>
+                            
                             <div class="flex items-center justify-between bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700/50 mt-2">
                                 <code class="text-sm font-mono font-bold text-cyan-400" x-text="item.id"></code>
-                                <button @click="copyToClipboard(item.id, $event)" class="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 transition">
-                                    <span>Copier</span>
+                                <button @click="copyToClipboard(item.id, $event)" class="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 transition cursor-pointer">
+                                    <span x-text="t('copyBtn')"></span>
                                 </button>
                             </div>
                         </div>
@@ -108,21 +112,18 @@
                 </template>
             </div>
             <div x-show="query && results.length === 0 && !loading" class="text-center py-12 text-slate-500">
-                Aucun résultat trouvé pour « <span x-text="query"></span> ».
+                <span x-text="t('noResults')"></span> « <span x-text="query"></span> ».
             </div>
         </div>
 
-        <!-- Onglet 2 : RECHERCHE DE GENRES -->
         <div x-show="tab === 'genres'">
-            <!-- Filtrer les genres -->
             <div class="mb-6">
                 <input type="text" 
                        x-model="genreQuery" 
-                       placeholder="Filtrer les genres (ex: Action, Comédie, Science-Fiction...)" 
+                       :placeholder="t('genresFilterPlaceholder')" 
                        class="w-full bg-slate-800 border-2 border-slate-700 focus:border-cyan-500 rounded-xl px-5 py-3 text-base focus:outline-none shadow-lg transition">
             </div>
 
-            <!-- Grille des genres -->
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <template x-for="genre in filteredGenres" :key="genre.id + '-' + genre.type">
                     <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-4 flex flex-col justify-between hover:border-slate-600 transition shadow-sm">
@@ -130,66 +131,134 @@
                             <h3 class="font-bold text-slate-100 text-base" x-text="genre.name"></h3>
                             <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded tracking-wide"
                                   :class="genre.type === 'movie' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'"
-                                  x-text="genre.type === 'movie' ? 'Genre Film' : 'Genre Série'">
+                                  x-text="genre.type === 'movie' ? t('badgeGenreMovie') : t('badgeGenreTv')">
                             </span>
                         </div>
                         <div class="flex items-center justify-between bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700/50">
                             <code class="text-sm font-mono font-bold text-emerald-400" x-text="genre.id"></code>
-                            <button @click="copyToClipboard(genre.id, $event)" class="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 transition">
-                                <span>Copier</span>
+                            <button @click="copyToClipboard(genre.id, $event)" class="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 transition cursor-pointer">
+                                <span x-text="t('copyBtn')"></span>
                             </button>
                         </div>
                     </div>
                 </template>
             </div>
             
-            <div x-show="genresList.length > 0 && filteredGenres.length === 0" class="text-center py-12 text-slate-500">
-                Aucun genre ne correspond à « <span x-text="genreQuery"></span> ».
+            <div x-show="apiKey && genresList.length > 0 && filteredGenres.length === 0" class="text-center py-12 text-slate-500">
+                <span x-text="t('noGenresFound')"></span> « <span x-text="genreQuery"></span> ».
             </div>
+            <div x-show="!apiKey" class="text-center py-12 text-slate-500" x-text="t('errorNoApiKey')"></div>
         </div>
 
-        <!-- Message d'erreur global -->
         <div x-show="error" x-text="error" class="bg-red-900/50 border border-red-500 text-red-200 p-4 rounded-xl mt-8 text-sm"></div>
 
     </div>
 
-    <!-- Logique de l'application -->
     <script>
         function tmdbFinder() {
             return {
-                tab: 'search', // 'search' ou 'genres'
+                tab: 'search',
                 query: '',
                 genreQuery: '',
                 apiKey: localStorage.getItem('tmdb_key') || '',
+                lang: localStorage.getItem('tmdb_lang') || 'fr-FR', // Langue par défaut
                 results: [],
-                genresList: [], // Contiendra tous les genres fusionnés (films + séries)
+                genresList: [],
                 loading: false,
                 error: null,
 
+                // Dictionnaire des traductions de l'UI
+                translations: {
+                    'fr-FR': {
+                        subtitle: "Trouvez instantanément l'ID d'un film, d'une série, d'un artiste ou d'un genre.",
+                        apiKeyLabel: "Clé API TMDB (v3 auth) ou Token d'accès (Bearer)",
+                        apiKeyPlaceholder: "Collez votre clé API ou Token ici...",
+                        saveBtn: "Sauvegarder",
+                        localStorageNote: "Sauvegardé localement dans votre navigateur (LocalStorage).",
+                        tabSearch: "Films, Séries & Artistes",
+                        tabGenres: "Liste des Genres",
+                        searchPlaceholder: "Ex: Inception, Breaking Bad, Leonardo DiCaprio...",
+                        genresFilterPlaceholder: "Filtrer les genres (ex: Action, Comédie...)",
+                        badgeMovie: "Film",
+                        badgeTv: "Série",
+                        badgePerson: "Artiste",
+                        badgeGenreMovie: "Genre Film",
+                        badgeGenreTv: "Genre Série",
+                        copyBtn: "Copier",
+                        copiedBtn: "Copié !",
+                        noResults: "Aucun résultat trouvé pour",
+                        noGenresFound: "Aucun genre ne correspond à",
+                        errorNoApiKey: "Veuillez ajouter votre clé API pour charger la liste des genres.",
+                        alertSaveKey: "Clé API sauvegardée avec succès !",
+                        errorFetch: "Erreur de l'API. Vérifiez la validité de votre clé."
+                    },
+                    'en-US': {
+                        subtitle: "Instantly find the ID of any movie, TV show, artist, or genre.",
+                        apiKeyLabel: "TMDB API Key (v3 auth) or Access Token (Bearer)",
+                        apiKeyPlaceholder: "Paste your API Key or Token here...",
+                        saveBtn: "Save",
+                        localStorageNote: "Saved locally in your browser (LocalStorage).",
+                        tabSearch: "Movies, TV Shows & People",
+                        tabGenres: "Genres List",
+                        searchPlaceholder: "e.g., Inception, Breaking Bad, Leonardo DiCaprio...",
+                        genresFilterPlaceholder: "Filter genres (e.g., Action, Comedy...)",
+                        badgeMovie: "Movie",
+                        badgeTv: "TV Show",
+                        badgePerson: "Person",
+                        badgeGenreMovie: "Movie Genre",
+                        badgeGenreTv: "TV Genre",
+                        copyBtn: "Copy",
+                        copiedBtn: "Copied!",
+                        noResults: "No results found for",
+                        noGenresFound: "No genres match",
+                        errorNoApiKey: "Please add your API key to load the genres list.",
+                        alertSaveKey: "API Key saved successfully!",
+                        errorFetch: "API Error. Please check your key validity."
+                    }
+                },
+
+                // Fonction d'aide pour traduire l'interface
+                t(key) {
+                    return this.translations[this.lang][key] || key;
+                },
+
+                // Changer de langue
+                setLanguage(newLang) {
+                    this.lang = newLang;
+                    localStorage.setItem('tmdb_lang', newLang);
+                    
+                    // Forcer le rechargement des genres dans la bonne langue
+                    this.genresList = [];
+                    if (this.apiKey) this.initGenres();
+                    
+                    // Relancer la recherche en cours s'il y en a une
+                    if (this.query) this.search();
+                },
+
                 saveKey() {
                     localStorage.setItem('tmdb_key', this.apiKey);
-                    alert('Clé API sauvegardée localement !');
+                    alert(this.t('alertSaveKey'));
+                    this.genresList = []; 
                     if (this.tab === 'search') this.search();
                     if (this.tab === 'genres') this.initGenres();
                 },
 
-                // Getters & Options pour l'API TMDB
                 getApiConfig() {
                     let urlBase = "https://api.themoviedb.org/3";
                     let options = {};
-                    let suffix = "&language=fr-FR";
+                    let suffix = `&language=${this.lang}`;
 
-                    if (this.apiKey.startsWith('eyJ')) { 
-                        options = { headers: { Authorization: `Bearer ${this.apiKey}` } };
+                    if (this.apiKey.trim().startsWith('eyJ')) { 
+                        options = { headers: { Authorization: `Bearer ${this.apiKey.trim()}` } };
                     } else {
-                        suffix += `&api_key=${this.apiKey}`;
+                        suffix += `&api_key=${this.apiKey.trim()}`;
                     }
                     return { urlBase, options, suffix };
                 },
 
                 async search() {
                     if (!this.query.trim()) { this.results = []; return; }
-                    if (!this.apiKey) { this.error = "Veuillez configurer votre clé API en haut."; return; }
+                    if (!this.apiKey) { this.error = this.t('errorNoApiKey'); return; }
 
                     this.loading = true;
                     this.error = null;
@@ -197,7 +266,7 @@
                     try {
                         const { urlBase, options, suffix } = this.getApiConfig();
                         const response = await fetch(`${urlBase}/search/multi?query=${encodeURIComponent(this.query)}${suffix}`, options);
-                        if (!response.ok) throw new Error("Erreur API. Vérifiez votre clé.");
+                        if (!response.ok) throw new Error(this.t('errorFetch'));
                         
                         const data = await response.json();
                         this.results = data.results.filter(i => ['movie', 'tv', 'person'].includes(i.media_type));
@@ -210,35 +279,34 @@
                 },
 
                 async initGenres() {
-                    // Ne charge les genres que si la liste est vide et que la clé API est présente
                     if (this.genresList.length > 0 || !this.apiKey) return;
                     this.error = null;
 
                     try {
                         const { urlBase, options, suffix } = this.getApiConfig();
                         
-                        // Récupération simultanée des genres de films et de séries
+                        // Remplacement propre du '&' pour le premier paramètre d'URL
+                        const cleanSuffix = suffix.startsWith('&') ? '?' + suffix.substring(1) : suffix;
+
                         const [movieRes, tvRes] = await Promise.all([
-                            fetch(`${urlBase}/genre/movie/list?${suffix}`, options),
-                            fetch(`${urlBase}/genre/tv/list?${suffix}`, options)
+                            fetch(`${urlBase}/genre/movie/list${cleanSuffix}`, options),
+                            fetch(`${urlBase}/genre/tv/list${cleanSuffix}`, options)
                         ]);
 
-                        if (!movieRes.ok || !tvRes.ok) throw new Error("Impossible de charger les genres.");
+                        if (!movieRes.ok || !tvRes.ok) throw new Error("Could not fetch genres.");
 
                         const movieData = await movieRes.json();
                         const tvData = await tvRes.json();
 
-                        // Formater et fusionner
                         const movieGenres = movieData.genres.map(g => ({ ...g, type: 'movie' }));
                         const tvGenres = tvData.genres.map(g => ({ ...g, type: 'tv' }));
                         
                         this.genresList = [...movieGenres, ...tvGenres];
                     } catch (err) {
-                        this.error = "Erreur lors de la récupération des genres : " + err.message;
+                        this.error = "Error loading genres: " + err.message;
                     }
                 },
 
-                // Filtre dynamique de la liste des genres en local
                 get filteredGenres() {
                     if (!this.genreQuery.trim()) return this.genresList;
                     return this.genresList.filter(g => 
@@ -250,7 +318,7 @@
                     navigator.clipboard.writeText(id).then(() => {
                         const btn = event.currentTarget;
                         const originalText = btn.innerHTML;
-                        btn.innerHTML = '<span class="text-green-400 font-medium">Copié !</span>';
+                        btn.innerHTML = `<span class="text-green-400 font-medium">${this.t('copiedBtn')}</span>`;
                         setTimeout(() => { btn.innerHTML = originalText; }, 1500);
                     });
                 }
