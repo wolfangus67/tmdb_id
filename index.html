@@ -3,324 +3,241 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TMDB ID Finder</title>
+    <title>TMDB ID Finder Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen font-sans">
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans" 
+      x-data="tmdbFinder()" 
+      x-init="initGenres()"
+      @keydown.window.prevent.slash="$refs.searchInput.focus()">
 
-    <div class="max-w-4xl mx-auto px-4 py-12" x-data="tmdbFinder()" x-init="initGenres()">
+    <div class="max-w-4xl mx-auto px-4 py-12">
+        <!-- Header -->
         <header class="text-center mb-10 relative">
-            <div class="absolute top-0 right-0 bg-slate-800 border border-slate-700 rounded-lg p-1 flex gap-1 text-xs">
+            <!-- Sélecteur de langue avec drapeaux -->
+            <div class="absolute top-0 right-0 bg-slate-800/80 backdrop-blur-sm border border-slate-700/60 rounded-xl p-1.5 flex gap-2 shadow-inner">
+                <!-- Drapeau Français -->
                 <button @click="setLanguage('fr-FR')" 
-                        :class="lang === 'fr-FR' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-slate-200'"
-                        class="px-2 py-1 rounded font-medium transition cursor-pointer">
-                    FR
+                        :class="lang === 'fr-FR' ? 'ring-2 ring-cyan-500 scale-110 opacity-100' : 'opacity-40 hover:opacity-80 scale-100'"
+                        class="w-7 h-5 rounded overflow-hidden shadow-sm transition-all cursor-pointer flex-shrink-0"
+                        title="Français">
+                    <svg viewBox="0 0 3 2" class="w-full h-full">
+                        <rect width="1" height="2" fill="#002395"/>
+                        <rect x="1" width="1" height="2" fill="#fff"/>
+                        <rect x="2" width="1" height="2" fill="#ED2939"/>
+                    </svg>
                 </button>
+                <!-- Drapeau Américain -->
                 <button @click="setLanguage('en-US')" 
-                        :class="lang === 'en-US' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-slate-200'"
-                        class="px-2 py-1 rounded font-medium transition cursor-pointer">
-                    EN
+                        :class="lang === 'en-US' ? 'ring-2 ring-cyan-500 scale-110 opacity-100' : 'opacity-40 hover:opacity-80 scale-100'"
+                        class="w-7 h-5 rounded overflow-hidden shadow-sm transition-all cursor-pointer flex-shrink-0"
+                        title="English">
+                    <svg viewBox="0 0 7410 3900" class="w-full h-full">
+                        <rect width="7410" height="3900" fill="#b22234"/>
+                        <path d="M0,0H7410V300H0V600H7410V900H0V1200H7410V1500H0V1800H7410V2100H0V2400H7410V2700H0V3000H7410V3300H0V3600H7410V3900" fill="#fff"/>
+                        <rect width="2964" height="2100" fill="#3c3b6e"/>
+                        <!-- Note: Version simplifiée des étoiles en SVG pur pour la légèreté de l'UI -->
+                        <g fill="#fff">
+                            <rect x="150" y="120" width="100" height="100" rx="50"/>
+                            <rect x="450" y="120" width="100" height="100" rx="50"/>
+                            <rect x="750" y="120" width="100" height="100" rx="50"/>
+                            <rect x="1050" y="120" width="100" height="100" rx="50"/>
+                            <rect x="1350" y="120" width="100" height="100" rx="50"/>
+                            <rect x="1650" y="120" width="100" height="100" rx="50"/>
+                            <rect x="300" y="270" width="100" height="100" rx="50"/>
+                            <rect x="600" y="270" width="100" height="100" rx="50"/>
+                            <rect x="900" y="270" width="100" height="100" rx="50"/>
+                            <rect x="1200" y="270" width="100" height="100" rx="50"/>
+                            <rect x="1500" y="270" width="100" height="100" rx="50"/>
+                            <rect x="150" y="420" width="100" height="100" rx="50"/>
+                            <rect x="450" y="420" width="100" height="100" rx="50"/>
+                            <rect x="750" y="420" width="100" height="100" rx="50"/>
+                            <rect x="1050" y="420" width="100" height="100" rx="50"/>
+                            <rect x="1350" y="420" width="100" height="100" rx="50"/>
+                            <rect x="1650" y="420" width="100" height="100" rx="50"/>
+                        </g>
+                    </svg>
                 </button>
             </div>
-
-            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2 mt-6 sm:mt-0">
-                TMDB ID Finder
-            </h1>
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2 mt-8 sm:mt-0">TMDB ID Finder</h1>
             <p class="text-slate-400" x-text="t('subtitle')"></p>
         </header>
 
+        <!-- API Key -->
         <div class="bg-slate-800 p-4 rounded-xl mb-8 border border-slate-700 shadow-md">
             <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2" x-text="t('apiKeyLabel')"></label>
             <div class="flex gap-2">
-                <input type="password" 
-                       x-model="apiKey" 
-                       :placeholder="t('apiKeyPlaceholder')" 
-                       class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
-                <button @click="saveKey()" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer whitespace-nowrap" x-text="t('saveBtn')">
-                </button>
+                <input type="password" x-model="apiKey" :placeholder="t('apiKeyPlaceholder')" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-cyan-500">
+                <button @click="saveKey()" class="bg-cyan-600 hover:bg-cyan-500 px-4 py-2 rounded-lg text-sm font-medium transition cursor-pointer" x-text="t('saveBtn')"></button>
             </div>
-            <p class="text-xs text-slate-500 mt-2" x-text="t('localStorageNote')"></p>
         </div>
 
+        <!-- Tabs -->
         <div class="flex border-b border-slate-700 mb-6 gap-2">
-            <button @click="tab = 'search'; error = null" 
-                    :class="tab === 'search' ? 'border-cyan-500 text-cyan-400' : 'border-transparent text-slate-400 hover:text-slate-200'"
-                    class="py-2 px-4 border-b-2 font-medium text-sm transition cursor-pointer"
-                    x-text="t('tabSearch')">
-            </button>
-            <button @click="tab = 'genres'; initGenres(); error = null" 
-                    :class="tab === 'genres' ? 'border-cyan-500 text-cyan-400' : 'border-transparent text-slate-400 hover:text-slate-200'"
-                    class="py-2 px-4 border-b-2 font-medium text-sm transition cursor-pointer"
-                    x-text="t('tabGenres')">
-            </button>
+            <button @click="tab = 'search'; error = null" :class="tab === 'search' ? 'border-cyan-500 text-cyan-400' : 'border-transparent text-slate-400'" class="py-2 px-4 border-b-2 font-medium text-sm cursor-pointer" x-text="t('tabSearch')"></button>
+            <button @click="tab = 'genres'; initGenres(); error = null" :class="tab === 'genres' ? 'border-cyan-500 text-cyan-400' : 'border-transparent text-slate-400'" class="py-2 px-4 border-b-2 font-medium text-sm cursor-pointer" x-text="t('tabGenres')"></button>
         </div>
 
+        <!-- Onglet 1: Médias -->
         <div x-show="tab === 'search'">
             <div class="mb-8">
                 <div class="relative">
                     <input type="text" 
+                           x-ref="searchInput"
                            x-model="query" 
                            @input.debounce.300ms="search()"
+                           @keydown.enter="copyFirstResult()"
                            :placeholder="t('searchPlaceholder')" 
                            class="w-full bg-slate-800 border-2 border-slate-700 focus:border-cyan-500 rounded-xl px-5 py-4 text-lg focus:outline-none shadow-lg transition">
-                    <div x-show="loading" class="absolute right-4 top-4">
-                        <svg class="animate-spin h-6 w-6 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
+                    <div class="absolute right-4 top-4 flex items-center gap-2">
+                        <span class="text-xs bg-slate-700 px-1.5 py-0.5 rounded text-slate-400 border border-slate-600">/</span>
+                        <div x-show="loading">
+                            <svg class="animate-spin h-6 w-6 text-cyan-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <template x-for="item in results" :key="item.id + '-' + item.media_type">
-                    <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-4 flex gap-4 hover:border-slate-600 transition shadow-sm">
+                <template x-for="(item, index) in results" :key="item.id + '-' + item.media_type">
+                    <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-4 flex gap-4 hover:border-slate-600 transition shadow-sm relative group">
+                        <template x-if="index === 0">
+                            <span class="absolute top-2 right-2 text-[9px] bg-slate-700 text-slate-400 px-1 rounded opacity-0 group-hover:opacity-100 transition">↵ Enter</span>
+                        </template>
+
                         <div class="w-16 h-24 bg-slate-950 rounded overflow-hidden flex-shrink-0 flex items-center justify-center">
-                            <template x-if="item.poster_path || item.profile_path">
-                                <img :src="'https://image.tmdb.org/t/p/w92' + (item.poster_path || item.profile_path)" class="w-full h-full object-cover">
-                            </template>
-                            <template x-if="!item.poster_path && !item.profile_path">
-                                <span class="text-xs text-slate-600">N/A</span>
-                            </template>
+                            <img x-show="item.poster_path || item.profile_path" :src="'https://image.tmdb.org/t/p/w92' + (item.poster_path || item.profile_path)" class="w-full h-full object-cover">
+                            <span x-show="!item.poster_path && !item.profile_path" class="text-xs text-slate-600">N/A</span>
                         </div>
                         
                         <div class="flex flex-col justify-between flex-grow min-w-0">
                             <div>
                                 <div class="flex items-center gap-2 mb-1">
-                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded tracking-wide"
-                                          :class="{
-                                            'bg-blue-500/20 text-blue-400': item.media_type === 'movie',
-                                            'bg-purple-500/20 text-purple-400': item.media_type === 'tv',
-                                            'bg-amber-500/20 text-amber-400': item.media_type === 'person'
-                                          }"
+                                    <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded"
+                                          :class="{\x27bg-blue-500/20 text-blue-400\x27: item.media_type === \x27movie\x27,\x27bg-purple-500/20 text-purple-400\x27: item.media_type === \x27tv\x27,\x27bg-amber-500/20 text-amber-400\x27: item.media_type === \x27person\x27}"
                                           x-text="item.media_type === 'movie' ? t('badgeMovie') : item.media_type === 'tv' ? t('badgeTv') : t('badgePerson')">
                                     </span>
-                                    <span class="text-xs text-slate-400 truncate" x-text="item.release_date || item.first_air_date || item.known_for_department"></span>
+                                    <span class="text-xs text-slate-400 truncate" x-text="item.release_date ? item.release_date.split('-')[0] : (item.first_air_date ? item.first_air_date.split('-')[0] : '')"></span>
                                 </div>
                                 <h3 class="font-bold text-slate-100 truncate text-base" :title="item.title || item.name" x-text="item.title || item.name"></h3>
+                                
+                                <p x-show="item.media_type === 'person' && item.known_for" class="text-xs text-slate-400 truncate mt-0.5">
+                                    <span class="text-slate-500">★</span> <span x-text="item.known_for.map(p => p.title || p.name).join(', ')"></span>
+                                </p>
                             </div>
                             
-                            <div class="flex items-center justify-between bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700/50 mt-2">
-                                <code class="text-sm font-mono font-bold text-cyan-400" x-text="item.id"></code>
-                                <button @click="copyToClipboard(item.id, $event)" class="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 transition cursor-pointer">
-                                    <span x-text="t('copyBtn')"></span>
-                                </button>
+                            <div class="flex items-center justify-between bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800 mt-2">
+                                <code class="text-sm font-mono font-bold text-cyan-400 select-all" x-text="item.id"></code>
+                                <button @click="copyToClipboard(item.id, $event)" class="text-xs text-slate-400 hover:text-slate-200 cursor-pointer" x-text="t('copyBtn')"></button>
                             </div>
                         </div>
                     </div>
                 </template>
             </div>
-            <div x-show="query && results.length === 0 && !loading" class="text-center py-12 text-slate-500">
-                <span x-text="t('noResults')"></span> « <span x-text="query"></span> ».
-            </div>
         </div>
 
+        <!-- Onglet 2: Genres -->
         <div x-show="tab === 'genres'">
             <div class="mb-6">
-                <input type="text" 
-                       x-model="genreQuery" 
-                       :placeholder="t('genresFilterPlaceholder')" 
-                       class="w-full bg-slate-800 border-2 border-slate-700 focus:border-cyan-500 rounded-xl px-5 py-3 text-base focus:outline-none shadow-lg transition">
+                <input type="text" x-model="genreQuery" :placeholder="t('genresFilterPlaceholder')" class="w-full bg-slate-800 border-2 border-slate-700 focus:border-cyan-500 rounded-xl px-5 py-3 text-base focus:outline-none">
             </div>
-
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <template x-for="genre in filteredGenres" :key="genre.id + '-' + genre.type">
-                    <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-4 flex flex-col justify-between hover:border-slate-600 transition shadow-sm">
+                    <div class="bg-slate-800 border border-slate-700/60 rounded-xl p-4 flex flex-col justify-between hover:border-slate-600 transition">
                         <div class="flex items-center justify-between mb-3">
                             <h3 class="font-bold text-slate-100 text-base" x-text="genre.name"></h3>
-                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded tracking-wide"
-                                  :class="genre.type === 'movie' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'"
-                                  x-text="genre.type === 'movie' ? t('badgeGenreMovie') : t('badgeGenreTv')">
-                            </span>
+                            <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded" :class="genre.type === 'movie' ? 'bg-blue-500/20 text-blue-400' : 'bg-purple-500/20 text-purple-400'" x-text="genre.type === 'movie' ? t('badgeGenreMovie') : t('badgeGenreTv')"></span>
                         </div>
-                        <div class="flex items-center justify-between bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700/50">
-                            <code class="text-sm font-mono font-bold text-emerald-400" x-text="genre.id"></code>
-                            <button @click="copyToClipboard(genre.id, $event)" class="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1 transition cursor-pointer">
-                                <span x-text="t('copyBtn')"></span>
-                            </button>
+                        <div class="flex items-center justify-between bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+                            <code class="text-sm font-mono font-bold text-emerald-400 select-all" x-text="genre.id"></code>
+                            <button @click="copyToClipboard(genre.id, $event)" class="text-xs text-slate-400 hover:text-slate-200 cursor-pointer" x-text="t('copyBtn')"></button>
                         </div>
                     </div>
                 </template>
             </div>
-            
-            <div x-show="apiKey && genresList.length > 0 && filteredGenres.length === 0" class="text-center py-12 text-slate-500">
-                <span x-text="t('noGenresFound')"></span> « <span x-text="genreQuery"></span> ».
-            </div>
-            <div x-show="!apiKey" class="text-center py-12 text-slate-500" x-text="t('errorNoApiKey')"></div>
         </div>
 
+        <!-- Error msg -->
         <div x-show="error" x-text="error" class="bg-red-900/50 border border-red-500 text-red-200 p-4 rounded-xl mt-8 text-sm"></div>
-
     </div>
 
     <script>
         function tmdbFinder() {
             return {
-                tab: 'search',
-                query: '',
-                genreQuery: '',
+                tab: 'search', query: '', genreQuery: '', results: [], genresList: [], loading: false, error: null,
                 apiKey: localStorage.getItem('tmdb_key') || '',
-                lang: localStorage.getItem('tmdb_lang') || 'fr-FR', // Langue par défaut
-                results: [],
-                genresList: [],
-                loading: false,
-                error: null,
-
-                // Dictionnaire des traductions de l'UI
+                lang: localStorage.getItem('tmdb_lang') || 'fr-FR',
                 translations: {
                     'fr-FR': {
                         subtitle: "Trouvez instantanément l'ID d'un film, d'une série, d'un artiste ou d'un genre.",
-                        apiKeyLabel: "Clé API TMDB (v3 auth) ou Token d'accès (Bearer)",
-                        apiKeyPlaceholder: "Collez votre clé API ou Token ici...",
-                        saveBtn: "Sauvegarder",
-                        localStorageNote: "Sauvegardé localement dans votre navigateur (LocalStorage).",
-                        tabSearch: "Films, Séries & Artistes",
-                        tabGenres: "Liste des Genres",
-                        searchPlaceholder: "Ex: Inception, Breaking Bad, Leonardo DiCaprio...",
-                        genresFilterPlaceholder: "Filtrer les genres (ex: Action, Comédie...)",
-                        badgeMovie: "Film",
-                        badgeTv: "Série",
-                        badgePerson: "Artiste",
-                        badgeGenreMovie: "Genre Film",
-                        badgeGenreTv: "Genre Série",
-                        copyBtn: "Copier",
-                        copiedBtn: "Copié !",
-                        noResults: "Aucun résultat trouvé pour",
-                        noGenresFound: "Aucun genre ne correspond à",
-                        errorNoApiKey: "Veuillez ajouter votre clé API pour charger la liste des genres.",
-                        alertSaveKey: "Clé API sauvegardée avec succès !",
-                        errorFetch: "Erreur de l'API. Vérifiez la validité de votre clé."
+                        apiKeyLabel: "Clé API TMDB (v3) ou Token (v4 Bearer)", apiKeyPlaceholder: "Collez votre clé ici...", saveBtn: "Sauvegarder",
+                        tabSearch: "Films, Séries & Artistes", tabGenres: "Liste des Genres",
+                        searchPlaceholder: "Ex: Inception, Breaking Bad... (Appuyez sur '/' pour focus)", genresFilterPlaceholder: "Filtrer les genres...",
+                        badgeMovie: "Film", badgeTv: "Série", badgePerson: "Artiste", badgeGenreMovie: "Genre Film", badgeGenreTv: "Genre Série",
+                        copyBtn: "Copier", copiedBtn: "Copié !", errorNoApiKey: "Clé API manquante.", errorFetch: "Erreur API."
                     },
                     'en-US': {
                         subtitle: "Instantly find the ID of any movie, TV show, artist, or genre.",
-                        apiKeyLabel: "TMDB API Key (v3 auth) or Access Token (Bearer)",
-                        apiKeyPlaceholder: "Paste your API Key or Token here...",
-                        saveBtn: "Save",
-                        localStorageNote: "Saved locally in your browser (LocalStorage).",
-                        tabSearch: "Movies, TV Shows & People",
-                        tabGenres: "Genres List",
-                        searchPlaceholder: "e.g., Inception, Breaking Bad, Leonardo DiCaprio...",
-                        genresFilterPlaceholder: "Filter genres (e.g., Action, Comedy...)",
-                        badgeMovie: "Movie",
-                        badgeTv: "TV Show",
-                        badgePerson: "Person",
-                        badgeGenreMovie: "Movie Genre",
-                        badgeGenreTv: "TV Genre",
-                        copyBtn: "Copy",
-                        copiedBtn: "Copied!",
-                        noResults: "No results found for",
-                        noGenresFound: "No genres match",
-                        errorNoApiKey: "Please add your API key to load the genres list.",
-                        alertSaveKey: "API Key saved successfully!",
-                        errorFetch: "API Error. Please check your key validity."
+                        apiKeyLabel: "TMDB API Key (v3) or Token (v4 Bearer)", apiKeyPlaceholder: "Paste your key here...", saveBtn: "Save",
+                        tabSearch: "Movies, TV Shows & People", tabGenres: "Genres List",
+                        searchPlaceholder: "e.g., Inception, Breaking Bad... (Press '/' to focus)", genresFilterPlaceholder: "Filter genres...",
+                        badgeMovie: "Movie", badgeTv: "TV Show", badgePerson: "Person", badgeGenreMovie: "Movie Genre", badgeGenreTv: "TV Genre",
+                        copyBtn: "Copy", copiedBtn: "Copied!", errorNoApiKey: "API Key missing.", errorFetch: "API Error."
                     }
                 },
-
-                // Fonction d'aide pour traduire l'interface
-                t(key) {
-                    return this.translations[this.lang][key] || key;
-                },
-
-                // Changer de langue
+                t(key) { return this.translations[this.lang][key] || key; },
                 setLanguage(newLang) {
-                    this.lang = newLang;
-                    localStorage.setItem('tmdb_lang', newLang);
-                    
-                    // Forcer le rechargement des genres dans la bonne langue
-                    this.genresList = [];
-                    if (this.apiKey) this.initGenres();
-                    
-                    // Relancer la recherche en cours s'il y en a une
+                    this.lang = newLang; localStorage.setItem('tmdb_lang', newLang);
+                    this.genresList = []; if (this.apiKey) this.initGenres();
                     if (this.query) this.search();
                 },
-
-                saveKey() {
-                    localStorage.setItem('tmdb_key', this.apiKey);
-                    alert(this.t('alertSaveKey'));
-                    this.genresList = []; 
-                    if (this.tab === 'search') this.search();
-                    if (this.tab === 'genres') this.initGenres();
-                },
-
+                saveKey() { localStorage.setItem('tmdb_key', this.apiKey); alert('OK !'); this.genresList = []; this.initGenres(); },
                 getApiConfig() {
                     let urlBase = "https://api.themoviedb.org/3";
-                    let options = {};
-                    let suffix = `&language=${this.lang}`;
-
-                    if (this.apiKey.trim().startsWith('eyJ')) { 
-                        options = { headers: { Authorization: `Bearer ${this.apiKey.trim()}` } };
-                    } else {
-                        suffix += `&api_key=${this.apiKey.trim()}`;
-                    }
+                    let options = this.apiKey.trim().startsWith('eyJ') ? { headers: { Authorization: `Bearer ${this.apiKey.trim()}` } } : {};
+                    let suffix = `&language=${this.lang}` + (this.apiKey.trim().startsWith('eyJ') ? '' : `&api_key=${this.apiKey.trim()}`);
                     return { urlBase, options, suffix };
                 },
-
                 async search() {
                     if (!this.query.trim()) { this.results = []; return; }
                     if (!this.apiKey) { this.error = this.t('errorNoApiKey'); return; }
-
-                    this.loading = true;
-                    this.error = null;
-
+                    this.loading = true; this.error = null;
                     try {
                         const { urlBase, options, suffix } = this.getApiConfig();
                         const response = await fetch(`${urlBase}/search/multi?query=${encodeURIComponent(this.query)}${suffix}`, options);
                         if (!response.ok) throw new Error(this.t('errorFetch'));
-                        
                         const data = await response.json();
                         this.results = data.results.filter(i => ['movie', 'tv', 'person'].includes(i.media_type));
-                    } catch (err) {
-                        this.error = err.message;
-                        this.results = [];
-                    } finally {
-                        this.loading = false;
-                    }
+                    } catch (err) { this.error = err.message; this.results = []; } finally { this.loading = false; }
                 },
-
                 async initGenres() {
                     if (this.genresList.length > 0 || !this.apiKey) return;
-                    this.error = null;
-
                     try {
                         const { urlBase, options, suffix } = this.getApiConfig();
-                        
-                        // Remplacement propre du '&' pour le premier paramètre d'URL
                         const cleanSuffix = suffix.startsWith('&') ? '?' + suffix.substring(1) : suffix;
-
-                        const [movieRes, tvRes] = await Promise.all([
-                            fetch(`${urlBase}/genre/movie/list${cleanSuffix}`, options),
-                            fetch(`${urlBase}/genre/tv/list${cleanSuffix}`, options)
-                        ]);
-
-                        if (!movieRes.ok || !tvRes.ok) throw new Error("Could not fetch genres.");
-
-                        const movieData = await movieRes.json();
-                        const tvData = await tvRes.json();
-
-                        const movieGenres = movieData.genres.map(g => ({ ...g, type: 'movie' }));
-                        const tvGenres = tvData.genres.map(g => ({ ...g, type: 'tv' }));
-                        
-                        this.genresList = [...movieGenres, ...tvGenres];
-                    } catch (err) {
-                        this.error = "Error loading genres: " + err.message;
-                    }
+                        const [movieRes, tvRes] = await Promise.all([fetch(`${urlBase}/genre/movie/list${cleanSuffix}`, options), fetch(`${urlBase}/genre/tv/list${cleanSuffix}`, options)]);
+                        const movieData = await movieRes.json(); const tvData = await tvRes.json();
+                        this.genresList = [...movieData.genres.map(g => ({ ...g, type: 'movie' })), ...tvData.genres.map(g => ({ ...g, type: 'tv' }))];
+                    } catch (err) { console.error(err); }
                 },
-
                 get filteredGenres() {
-                    if (!this.genreQuery.trim()) return this.genresList;
-                    return this.genresList.filter(g => 
-                        g.name.toLowerCase().includes(this.genreQuery.toLowerCase())
-                    );
+                    return this.genresList.filter(g => g.name.toLowerCase().includes(this.genreQuery.toLowerCase()));
                 },
-
                 copyToClipboard(id, event) {
                     navigator.clipboard.writeText(id).then(() => {
-                        const btn = event.currentTarget;
-                        const originalText = btn.innerHTML;
-                        btn.innerHTML = `<span class="text-green-400 font-medium">${this.t('copiedBtn')}</span>`;
-                        setTimeout(() => { btn.innerHTML = originalText; }, 1500);
+                        const btn = event?.currentTarget;
+                        if (btn) {
+                            const original = btn.innerHTML; btn.innerHTML = `<span class="text-green-400">${this.t('copiedBtn')}</span>`;
+                            setTimeout(() => { btn.innerHTML = original; }, 1200);
+                        }
                     });
+                },
+                copyFirstResult() {
+                    if (this.results.length > 0) {
+                        this.copyToClipboard(this.results[0].id);
+                        alert(`${this.t('copiedBtn')} -> ${this.results[0].title || this.results[0].name} (ID: ${this.results[0].id})`);
+                    }
                 }
             }
         }
